@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Paper with Timer and Feedback</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to bottom, black, yellow);
+        }
+        #exam-container {
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 500px;
+            text-align: center;
+            position: relative;
+        }
+        .question-container {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .options {
+            list-style-type: none;
+            padding: 0;
+        }
+        .options li {
+            margin: 10px 0;
+        }
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+        #timer {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        #result {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        #wrong-answers {
+            margin-top: 20px;
+        }
+        #nav {
+            margin-bottom: 20px;
+        }
+        #nav button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="exam-container">
+        <div id="nav">
+            <button onclick="selectSubject('science')">SCIENCE</button>
+            <button onclick="selectSubject('gk')">GK</button>
+            <button onclick="selectSubject('math')">MATH</button>
+            
+        </div>
+        <div id="timer">Time Remaining: <span id="time">90</span> seconds</div>
+        <div class="question-container" id="question-container"></div>
+        <ul class="options" id="options"></ul>
+        <div id="feedback"></div>
+        <div class="btn-container">
+            <button id="next-btn" disabled>Next Question</button>
+            <button id="submit-btn">Submit</button>
+        </div>
+        <div id="result"></div>
+        <button id="show-wrong-answers-btn" style="display:none;">Show Incorrect Answers</button>
+        <div id="wrong-answers" style="display:none;"></div>
+    </div>
+
+<script>
+    const questionsData = {
+    science: [
+        { question: "1. पृथ्वी का आकार क्या है?", options: ["गोल", "चपटा", "आयताकार", "क्यूबिक"], answer: 0 },
+        { question: "2. जल का रासायनिक सूत्र क्या है?", options: ["H2O", "CO2", "O2", "H2"], answer: 0 },
+        { question: "3. प्रकाश का वेग क्या होता है?", options: ["300,000 km/s", "150,000 km/s", "400,000 km/s", "200,000 km/s"], answer: 0 },
+        { question: "4. न्यूटन के गति के तीसरे नियम का कथन क्या है?", options: ["किसी वस्तु पर लागू बल उसके गतिकी को बदलता है।", "हर क्रिया की एक समान और विपरीत प्रतिक्रिया होती है।", "बिना बल के कोई वस्तु गति नहीं कर सकती।", "गति हमेशा सीधी होती है।"], answer: 1 },
+        { question: "5. ध्वनि तरंगों की चाल किस माध्यम में सबसे अधिक होती है?", options: ["गैस", "तरल", "ठोस", "ख vacío"], answer: 2 },
+        { question: "6. विद्युत धारा के कारण चुंबकीय क्षेत्र उत्पन्न करने का नियम कौन सा है?", options: ["फाराडे का नियम", "लेंज़ का नियम", "ओहम का नियम", "कौम्ब की नियम"], answer: 0 },
+        { question: "7. ऊष्मा के संचरण की विधियों को नाम दें।", options: ["संवहन, संवहन और विकिरण", "संवहन, विकिरण और विकिरण", "संचलन, संचारण और संवहन", "संचलन, संचरण और विकिरण"], answer: 0 },
+        { question: "8. गुरुत्वाकर्षण बल का सूत्र क्या है?", options: ["F = ma", "F = G(m1m2)/r²", "F = m(v²/r)", "F = 1/2 mv²"], answer: 1 },
+        { question: "9. किसी पदार्थ की द्रव्यमान ऊर्जा सम्बन्ध किस नियम द्वारा वर्णित होती है?", options: ["न्यूटन का पहला नियम", "आइंस्टाइन का E=mc²", "गैस का नियम", "क्लौजियस का नियम"], answer: 1 },
+        { question: "10. प्रकाश का अपवर्तन किसके कारण होता है?", options: ["तरंग दैर्ध्य", "घनत्व", "उष्मा", "चुंबकीय क्षेत्र"], answer: 1 },
+        { question: "11. रेडियोधर्मिता का अध्ययन किसने किया था?", options: ["आइंस्टाइन", "क्यूरी", "न्यूटन", "गैलीलियो"], answer: 1 },
+        { question: "12. पेन के लेखन में कौन सा सिद्धांत काम करता है?", options: ["वायवीय", "गति का सिद्धांत", "विकिरण", "गति के संरक्षण का सिद्धांत"], answer: 1 },
+        { question: "13. सेल के कितने प्रकार होते हैं?", options: ["दो", "तीन", "चार", "पाँच"], answer: 1 },
+        { question: "14. पृष्ठीय तनाव किसके कारण होता है?", options: ["गैस", "तरल", "ठोस", "प्रकाश"], answer: 1 },
+        { question: "15. प्राकृतिक उर्जा के स्रोत कौन से हैं?", options: ["सूर्य", "पवन", "पानी", "सभी"], answer: 3 },
+        { question: "16. ऊर्जा के रूपांतरण की प्रक्रिया को क्या कहते हैं?", options: ["उत्पादन", "संवहन", "परिवर्तन", "उपकरण"], answer: 2 },
+        { question: "17. कौन सी मात्रा चक्रवात का निर्माण करती है?", options: ["गति", "तापमान", "दाब", "घनत्व"], answer: 2 },
+        { question: "18. सबसे हल्की गैस कौन सी है?", options: ["हाइड्रोजन", "हेलियम", "ऑक्सीजन", "कार्बन डाइऑक्साइड"], answer: 0 },
+        { question: "19. टेलीस्कोप किस सिद्धांत पर कार्य करता है?", options: ["आवर्तन", "अवशोषण", "प्रकाशिकी", "रेडियो"], answer: 2 },
+        { question: "20. जलीय जीवों के लिए मुख्य जीवन रक्षक तत्व क्या है?", options: ["ऑक्सीजन", "कार्बन", "हाइड्रोजन", "सोडियम"], answer: 0 },
+        { question: "21. DNA की संरचना को किसने खोजा?", options: ["गेल-आर्ड", "वॉटसन और क्रिक", "मेंडल", "लिंडन"], answer: 1 },
+        { question: "22. सबसे कम बूँद आकार किसकी होती है?", options: ["वायु", "तरल", "ठोस", "पानी"], answer: 0 },
+        { question: "23. जीन्स का कार्य क्या है?", options: ["प्रोटीन निर्माण", "ऊर्जा उत्पादन", "विकास", "सभी"], answer: 3 },
+        { question: "24. क्लोरोफिल का कार्य क्या है?", options: ["विकिरण", "प्रकाश संश्लेषण", "वाष्पीकरण", "शीतलन"], answer: 1 },
+        { question: "25. बायोलॉजी में गुणसूत्रों की संख्या कितनी होती है?", options: ["46", "23", "22", "48"], answer: 0 },
+        { question: "26. जल के बूँदों की आकृति क्यों होती है?", options: ["दाब", "वातावरण", "ऊष्मा", "गति"], answer: 0 },
+        { question: "27. हाइड्रोजन का परमाणु संख्या क्या है?", options: ["1", "2", "3", "0"], answer: 0 },
+        { question: "28. चाँद के धरती पर प्रभाव का नाम क्या है?", options: ["ध्रुवीय प्रभाव", "केंद्रक प्रभाव", "भ्रामक प्रभाव", "ज्वारीय प्रभाव"], answer: 3 },
+        { question: "29. ऑक्सीजन का रासायनिक प्रतीक क्या है?", options: ["O", "O2", "O3", "H2O"], answer: 1 },
+        { question: "30. कौन सा तत्व जल में नहीं घुलता?", options: ["नमक", "चीनी", "तेल", "अल्कोहल"], answer: 2 },
+        { question: "31. जलीय जीवों के लिए मुख्य जीवन रक्षक तत्व क्या है?", options: ["ऑक्सीजन", "कार्बन", "हाइड्रोजन", "सोडियम"], answer: 0 },
+        { question: "32. प्रोटीन का निर्माण किससे होता है?", options: ["कार्बन", "नाइट्रोजन", "हाइड्रोजन", "सभी"], answer: 3 },
+        { question: "33. क्या ठोस वस्तुओं में अणुओं के बीच दूरी होती है?", options: ["हां", "नहीं", "अज्ञात", "कभी-कभी"], answer: 0 },
+        { question: "34. कार्बन डाइऑक्साइड का सूत्र क्या है?", options: ["CO2", "CO", "C2O", "O2"], answer: 0 },
+        { question: "35. ध्वनि तरंगें किस प्रकार की होती हैं?", options: ["संगणक", "गति", "वैश्विक", "समानांतर"], answer: 0 },
+        { question: "36. जलीय जीवों की श्वसन प्रक्रिया क्या होती है?", options: ["जल में ऑक्सीजन लेना", "हवा में ऑक्सीजन लेना", "कार्बन लेना", "हाइड्रोजन लेना"], answer: 0 },
+        { question: "37. कौन सा पदार्थ ठोस, तरल और गैस में परिवर्तित हो सकता है?", options: ["पानी", "सिर्फ ठोस", "सिर्फ गैस", "सिर्फ तरल"], answer: 0 },
+        { question: "38. किस गैस को रंगहीन, गंधहीन और विषैले के रूप में जाना जाता है?", options: ["कार्बन डाइऑक्साइड", "हाइड्रोजन", "अमोनिया", "क्लोरीन"], answer: 0 },
+        { question: "39. कार्बन के कितने प्रकार होते हैं?", options: ["एक", "दो", "तीन", "चार"], answer: 2 },
+        { question: "40. प्लास्टिक का मुख्य घटक क्या है?", options: ["कार्बन", "हाइड्रोजन", "ऑक्सीजन", "सभी"], answer: 0 },
+],
+       gk: [
+        { question: "1. भारत की राजधानी क्या है?", options: ["मुंबई", "दिल्ली", "कोलकाता", "चेन्नई"], answer: 1 },
+        { question: "2. 2020 का ओलंपिक खेल कहाँ हुआ था?", options: ["टोक्यो", "रियो", "लंदन", "बीजिंग"], answer: 0 },
+        { question: "3. संविधान का संरक्षक किसे कहा जाता है?", options: ["राष्ट्रपति", "प्रधानमंत्री", "सुप्रीम कोर्ट", "लोक सभा"], answer: 2 },
+        { question: "4. भारतीय रुपये का प्रतीक चिन्ह किस वर्ष में अपनाया गया?", options: ["2010", "2008", "2009", "2012"], answer: 0 },
+        { question: "5. भारत में सबसे लंबी नदी कौन सी है?", options: ["गंगा", "यमुना", "गोदावरी", "नर्मदा"], answer: 0 },
+        { question: "6. UNO का पूर्ण रूप क्या है?", options: ["United National Organization", "United Nations Organization", "United Nature Organization", "United Native Organization"], answer: 1 },
+        { question: "7. महात्मा गांधी को किस वर्ष में 'राष्ट्रपिता' का खिताब दिया गया?", options: ["1944", "1947", "1948", "1946"], answer: 0 },
+        { question: "8. भारत में 'राष्ट्रीय मतदाता दिवस' कब मनाया जाता है?", options: ["25 जनवरी", "26 जनवरी", "15 अगस्त", "2 अक्टूबर"], answer: 0 },
+        { question: "9. भारत के राष्ट्रपति का कार्यकाल कितने वर्षों का होता है?", options: ["4 वर्ष", "5 वर्ष", "6 वर्ष", "7 वर्ष"], answer: 1 },
+        { question: "10. ताजमहल किस नदी के किनारे स्थित है?", options: ["गंगा", "यमुना", "सिंधु", "गोदावरी"], answer: 1 },
+        { question: "11. भारत के प्रथम प्रधानमंत्री कौन थे?", options: ["महात्मा गांधी", "लाल बहादुर शास्त्री", "इंदिरा गांधी", "जवाहरलाल नेहरू"], answer: 3 },
+        { question: "12. किस भारतीय क्रिकेट खिलाड़ी को 'द वॉल' के नाम से जाना जाता है?", options: ["सचिन तेंदुलकर", "सौरव गांगुली", "राहुल द्रविड़", "विराट कोहली"], answer: 2 },
+        { question: "13. भारत का सबसे बड़ा राज्य कौन सा है?", options: ["मध्य प्रदेश", "राजस्थान", "महाराष्ट्र", "उत्तर प्रदेश"], answer: 1 },
+        { question: "14. भारत के पहले उपराष्ट्रपति कौन थे?", options: ["सर्वपल्ली राधाकृष्णन", "जाकिर हुसैन", "विवेकानंद", "लाल बहादुर शास्त्री"], answer: 0 },
+        { question: "15. पंचायती राज प्रणाली को कब लागू किया गया था?", options: ["1947", "1950", "1952", "1959"], answer: 3 },
+        { question: "16. ओजोन परत पृथ्वी को किससे बचाती है?", options: ["पराबैंगनी किरणें", "इन्फ्रा रेड किरणें", "रेडियो तरंगें", "गामा किरणें"], answer: 0 },
+        { question: "17. भारत के किस राज्य में सूर्य सबसे पहले उगता है?", options: ["अरुणाचल प्रदेश", "असम", "सिक्किम", "मिज़ोरम"], answer: 0 },
+        { question: "18. भारतीय संसद का ऊपरी सदन कौन सा है?", options: ["लोक सभा", "राज्य सभा", "विधानसभा", "विधान परिषद"], answer: 1 },
+        { question: "19. किस वर्ष में भारत को गणराज्य घोषित किया गया?", options: ["1947", "1950", "1952", "1965"], answer: 1 },
+        { question: "20. भारत में राष्ट्रीय ध्वज की लम्बाई और चौड़ाई का अनुपात क्या होता है?", options: ["2:3", "3:4", "4:5", "1:2"], answer: 0 },
+        { question: "21. किस देश के साथ भारत की सबसे लंबी सीमा लगती है?", options: ["चीन", "बांग्लादेश", "पाकिस्तान", "नेपाल"], answer: 1 },
+        { question: "22. भारत के सबसे पुराने रेलवे स्टेशन का नाम क्या है?", options: ["छत्रपति शिवाजी टर्मिनस", "कोलकाता स्टेशन", "धोराजी स्टेशन", "चर्चगेट स्टेशन"], answer: 0 },
+        { question: "23. भारत के पहले गृह मंत्री कौन थे?", options: ["सरदार वल्लभभाई पटेल", "जवाहरलाल नेहरू", "महात्मा गांधी", "लाल बहादुर शास्त्री"], answer: 0 },
+        { question: "24. भारतीय संविधान की प्रस्तावना में 'समाजवादी' और 'धर्मनिरपेक्ष' शब्द कब जोड़े गए?", options: ["1975", "1976", "1980", "1985"], answer: 1 },
+        { question: "25. भारत के संविधान को तैयार करने में कितने दिन लगे?", options: ["2 वर्ष, 11 माह, 18 दिन", "3 वर्ष, 1 माह, 5 दिन", "2 वर्ष, 5 माह, 22 दिन", "1 वर्ष, 9 माह, 25 दिन"], answer: 0 },
+        { question: "26. आरटीआई (सूचना का अधिकार) अधिनियम किस वर्ष में लागू हुआ?", options: ["2002", "2003", "2005", "2007"], answer: 2 },
+        { question: "27. संविधान सभा के अध्यक्ष कौन थे?", options: ["बी.आर. अम्बेडकर", "राजेंद्र प्रसाद", "जवाहरलाल नेहरू", "महात्मा गांधी"], answer: 1 },
+        { question: "28. विश्व स्वास्थ्य संगठन (WHO) का मुख्यालय कहाँ स्थित है?", options: ["न्यूयॉर्क", "जिनेवा", "पेरिस", "लंदन"], answer: 1 },
+        { question: "29. पृथ्वी दिवस कब मनाया जाता है?", options: ["5 जून", "22 अप्रैल", "21 मार्च", "15 जुलाई"], answer: 1 },
+        { question: "30. 'ब्लू प्लेनेट' किसे कहा जाता है?", options: ["शनि", "मंगल", "पृथ्वी", "बृहस्पति"], answer: 2 },
+        { question: "31. 'सेल्यूलोज' मुख्य रूप से किसमें पाया जाता है?", options: ["पशु", "वनस्पति", "जीवाणु", "विषाणु"], answer: 1 },
+        { question: "32. इलेक्ट्रॉन की खोज किसने की थी?", options: ["न्यूटन", "जे.जे. थॉमसन", "आइंस्टीन", "रदरफोर्ड"], answer: 1 },
+        { question: "33. 'प्रकाश वर्ष' किसे मापने के लिए इस्तेमाल किया जाता है?", options: ["समय", "दूरी", "वेग", "शक्ति"], answer: 1 },
+        { question: "34. भारत के किस राज्य में तेंलंगाना आंदोलन हुआ?", options: ["महाराष्ट्र", "आंध्र प्रदेश", "कर्नाटक", "तमिलनाडु"], answer: 1 },
+        { question: "35. प्रथम विश्व युद्ध कब शुरू हुआ?", options: ["1914", "1918", "1939", "1945"], answer: 0 },
+        { question: "36. रक्त का शुद्धिकरण किस अंग द्वारा होता है?", options: ["दिल", "फेफड़े", "यकृत", "गुर्दा"], answer: 3 },
+        { question: "37. भारत का राष्ट्रीय गीत कौन सा है?", options: ["वंदे मातरम्", "जन गण मन", "सारे जहाँ से अच्छा", "हम होंगे कामयाब"], answer: 0 },
+        { question: "38. भारत का सबसे बड़ा वाणिज्यिक बैंक कौन सा है?", options: ["रिजर्व बैंक ऑफ इंडिया", "पंजाब नेशनल बैंक", "स्टेट बैंक ऑफ इंडिया", "आईसीआईसीआई बैंक"], answer: 2 },
+        { question: "39. भाभा परमाणु अनुसंधान केंद्र (BARC) कहाँ स्थित है?", options: ["मुंबई", "दिल्ली", "चेन्नई", "कोलकाता"], answer: 0 },
+        { question: "40. माउंट एवरेस्ट की ऊँचाई कितनी है?", options: ["8485 मीटर", "8848 मीटर", "8000 मीटर", "9000 मीटर"], answer: 1 }
+    ],
+        math: [
+        { question: "1. एक त्रिभुज का क्षेत्रफल किस सूत्र से ज्ञात किया जाता है?", options: ["1/2 × आधार × ऊँचाई", "लम्बाई × चौड़ाई", "πr²", "4/3πr³"], answer: 0 },
+        { question: "2. दो संख्याओं 48 और 60 का महत्तम समापवर्तक (HCF) क्या है?", options: ["4", "12", "8", "16"], answer: 1 },
+        { question: "3. 1 से 100 तक के सम संख्याओं का योगफल क्या है?", options: ["2450", "2550", "2500", "2600"], answer: 1 },
+        { question: "4. किसी वृत्त की परिधि का सूत्र क्या है?", options: ["2πr", "πr²", "r²", "πr"], answer: 0 },
+        { question: "5. समीकरण x² - 4 = 0 का हल क्या होगा?", options: ["x = 4", "x = 2", "x = ±2", "x = 0"], answer: 2 },
+        { question: "6. π का मान क्या है?", options: ["3.142", "3.141", "3.15", "3.14"], answer: 0 },
+        { question: "7. 3 का वर्गमूल क्या है?", options: ["9", "√3", "3", "1.732"], answer: 3 },
+        { question: "8. 0 का गुणनफल किसी संख्या से क्या होगा?", options: ["1", "0", "संख्या ही", "असीमित"], answer: 1 },
+        { question: "9. द्विघात समीकरण का सामान्य रूप क्या है?", options: ["ax² + bx + c = 0", "ax³ + bx² + c = 0", "ax² + b = 0", "x² + y² = 0"], answer: 0 },
+        { question: "10. यदि एक कोण 90° से कम हो, तो उसे क्या कहा जाता है?", options: ["समकोण", "अधिककोण", "न्यूनकोण", "सीधा कोण"], answer: 2 },
+        { question: "11. एक समलम्ब के क्षेत्रफल का सूत्र क्या है?", options: ["1/2 × (आधार1 + आधार2) × ऊँचाई", "आधार × ऊँचाई", "πr²", "l × w"], answer: 0 },
+        { question: "12. किसी संख्या का व्युत्क्रम क्या है?", options: ["1/x", "x²", "√x", "x³"], answer: 0 },
+        { question: "13. गणित में द्विघात का अर्थ क्या होता है?", options: ["दूसरी घात", "पहली घात", "तीसरी घात", "शून्य घात"], answer: 0 },
+        { question: "14. त्रिज्या 7 सेमी वाले एक वृत्त का क्षेत्रफल क्या है?", options: ["154 सेमी²", "144 सेमी²", "140 सेमी²", "150 सेमी²"], answer: 0 },
+        { question: "15. गणित में विमीय सूत्र का क्या प्रयोग है?", options: ["मात्रा ज्ञात करने के लिए", "आयतन ज्ञात करने के लिए", "समय ज्ञात करने के लिए", "कोई नहीं"], answer: 0 },
+        { question: "16. 2x + 3 = 7 का हल क्या है?", options: ["x = 4", "x = 2", "x = 1", "x = 0"], answer: 1 },
+        { question: "17. त्रिकोणमिति में sin 90° का मान क्या होता है?", options: ["0", "1", "½", "√3"], answer: 1 },
+        { question: "18. किसी समतल की घनत्व को किस सूत्र से ज्ञात किया जाता है?", options: ["द्रव्यमान/आयतन", "वजन × लंबाई", "आयतन × द्रव्यमान", "कोई नहीं"], answer: 0 },
+        { question: "19. यदि sin θ = 0.5, तो θ का मान क्या होगा?", options: ["30°", "45°", "60°", "90°"], answer: 0 },
+        { question: "20. xⁿ का मान क्या है जब n = 0?", options: ["0", "1", "x", "∞"], answer: 1 },
+        { question: "21. समीकरण y = mx + c किस रेखा का समीकरण है?", options: ["अधिककोण", "वक्र", "समकोण", "सरल रेखा"], answer: 3 },
+        { question: "22. गुणनफल 7 और 8 का क्या होगा?", options: ["54", "56", "58", "60"], answer: 1 },
+        { question: "23. जब दो कोण का योगफल 180° हो, तो उन्हें क्या कहा जाता है?", options: ["समकोण", "परिपूरक कोण", "अधिककोण", "सन्निकट कोण"], answer: 1 },
+        { question: "24. किसी घन का आयतन ज्ञात करने का सूत्र क्या है?", options: ["s³", "s²", "4πr²", "a³"], answer: 0 },
+        { question: "25. x⁴ - 16 = 0 का हल क्या होगा?", options: ["x = ±4", "x = 4", "x = ±2", "x = 2"], answer: 2 },
+        { question: "26. व्युत्क्रम त्रिकोणमिति में tan⁻¹(1) का मान क्या होता है?", options: ["45°", "30°", "60°", "90°"], answer: 0 },
+        { question: "27. त्रिकोणमिति में cos 0° का मान क्या होता है?", options: ["0", "1", "½", "√2"], answer: 1 },
+        { question: "28. रेखा AB की लंबाई को मापने के लिए किस इकाई का प्रयोग किया जाता है?", options: ["सेकंड", "मीटर", "किलो", "लीटर"], answer: 1 },
+        { question: "29. एक वर्ग की परिधि का सूत्र क्या है?", options: ["4 × भुजा", "भुजा²", "2 × भुजा", "भुजा"], answer: 0 },
+        { question: "30. लघुगणक (logarithm) का आविष्कार किसने किया?", options: ["आर्किमिडीज", "जॉन नेपियर", "न्यूटन", "पाइथागोरस"], answer: 1 },
+        { question: "31. x³ = 8 का हल क्या है?", options: ["x = 2", "x = 3", "x = 1", "x = 0"], answer: 0 },
+        { question: "32. गणित में 'बीजगणित' का अर्थ क्या है?", options: ["संख्याओं का अध्ययन", "रूपों का अध्ययन", "समीकरणों का अध्ययन", "वक्रों का अध्ययन"], answer: 2 },
+        { question: "33. समभुज त्रिभुज का प्रत्येक कोण कितना होता है?", options: ["45°", "60°", "90°", "30°"], answer: 1 },
+        { question: "34. गणित में 0.125 को भिन्न के रूप में कैसे लिखा जा सकता है?", options: ["1/4", "1/2", "1/8", "1/3"], answer: 2 },
+        { question: "35. गणना में 'कैलकुलस' का क्या अर्थ है?", options: ["संख्याओं का जोड़", "अवकलन और समाकलन", "भिन्नों का जोड़", "रेखाओं का अध्ययन"], answer: 1 },
+        { question: "36. कोणों का मान निकालने के लिए कोणमिति का उपयोग किसमें किया जाता है?", options: ["वृत्त", "त्रिभुज", "चतुर्भुज", "समान्तर चतुर्भुज"], answer: 1 },
+        { question: "37. समांतर रेखाओं के बीच का कोण कितना होता है?", options: ["0°", "90°", "180°", "45°"], answer: 0 },
+        { question: "38. π का अनुमानित मान क्या होता है?", options: ["3", "3.1416", "3.2", "4"], answer: 1 },
+        { question: "39. कोणमिति में tan 45° का मान क्या होता है?", options: ["0", "1", "√2", "2"], answer: 1 },
+        { question: "40. एक गोलार्ध का क्षेत्रफल क्या होता है?", options: ["2πr²", "4πr²", "3πr²", "πr²"], answer: 0 }
+    ],
+      };
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let timer;
+    let selectedSubject = '';
+
+    function startTimer(duration) {
+        let timeRemaining = duration;
+        const timeDisplay = document.getElementById('time');
+
+        // Clear any existing timer
+        clearInterval(timer);
+
+        // Start a new timer
+        timer = setInterval(() => {
+            timeRemaining--;
+            timeDisplay.textContent = timeRemaining;
+
+            if (timeRemaining <= 0) {
+                clearInterval(timer);
+                alert("Time's up!");
+                loadNextQuestion();
+            }
+        }, 1000);
+    }
+
+    function loadQuestion() {
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options');
+        const nextBtn = document.getElementById('next-btn');
+
+        const currentQuestion = questionsData[selectedSubject][currentQuestionIndex];
+        questionContainer.textContent = currentQuestion.question;
+        optionsContainer.innerHTML = '';
+
+        currentQuestion.options.forEach((option, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="radio" name="option" value="${index}" onchange="enableNextButton()"> ${option}`;
+            optionsContainer.appendChild(li);
+        });
+
+        nextBtn.disabled = true; // Disable next button initially
+        startTimer(90); // Start timer for 90 seconds for the current question
+    }
+
+    function enableNextButton() {
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.disabled = false; // Enable next button when an option is selected
+    }
+
+    function loadNextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questionsData[selectedSubject].length) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        const resultContainer = document.getElementById('result');
+        resultContainer.innerHTML = `<h2>Your score: ${score}/${questionsData[selectedSubject].length}</h2>`;
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'none';
+        document.getElementById('show-wrong-answers-btn').style.display = 'block';
+        clearInterval(timer); // Stop the timer
+    }
+
+    function showWrongAnswers() {
+        const wrongAnswersContainer = document.getElementById('wrong-answers');
+        wrongAnswersContainer.innerHTML = '<h3>Wrong Answers:</h3>';
+        
+        questionsData[selectedSubject].forEach((question, index) => {
+            const selectedOption = document.querySelector(`input[name="option"]:checked`);
+            const selectedAnswer = selectedOption ? parseInt(selectedOption.value) : -1;
+            if (selectedAnswer !== question.answer) {
+                wrongAnswersContainer.innerHTML += `<p><strong>${question.question}</strong><br>Correct Answer: ${question.options[question.answer]}<br>Your Answer: ${selectedAnswer === -1 ? 'Not Answered' : question.options[selectedAnswer]}</p>`;
+            }
+        });
+
+        wrongAnswersContainer.style.display = 'block'; // Show the wrong answers
+    }
+
+    function selectSubject(subject) {
+        selectedSubject = subject;
+        currentQuestionIndex = 0;
+        score = 0;
+        document.getElementById('result').innerHTML = '';
+        document.getElementById('wrong-answers').style.display = 'none';
+        document.getElementById('show-wrong-answers-btn').style.display = 'none';
+        clearInterval(timer);
+        loadQuestion(); // Load the first question for the selected subject
+    }
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+        const selectedOption = document.querySelector(`input[name="option"]:checked`);
+        if (selectedOption) {
+            const answerIndex = parseInt(selectedOption.value);
+            if (answerIndex === questionsData[selectedSubject][currentQuestionIndex].answer) {
+                score++;
+            }
+            loadNextQuestion();
+        }
+    });
+
+    document.getElementById('submit-btn').addEventListener('click', () => {
+        showResult();
+    });
+
+    document.getElementById('show-wrong-answers-btn').addEventListener('click', () => {
+        showWrongAnswers();
+    });
+
+    // Load the first question and set the default subject
+    selectSubject('science'); // Default subject loaded
+</script>
+
+</body>
+</html>
